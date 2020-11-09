@@ -10,8 +10,10 @@ def temp_db(f):
         def override_get_db():
             try:
                 db = SessionLocal()
+                db.begin(subtransactions=True)
                 yield db
             finally:
+                db.rollback()
                 db.close()
 
         # fixtureから受け取るSessionLocalを使うようにget_dbを強制的に変更
@@ -29,5 +31,11 @@ client = TestClient(app)
 
 @temp_db
 def test_create_user():
+    response = client.post("/users/", json={"email": "foo", "password": "fo"})
+    assert response.status_code == 200
+
+
+@temp_db
+def test_create_user_2():
     response = client.post("/users/", json={"email": "foo", "password": "fo"})
     assert response.status_code == 200
